@@ -4,10 +4,11 @@ from datetime import datetime
 from django.db.models import (ForeignKey, DateField, CharField,
                               UUIDField, IntegerField, BooleanField,
                               Model)
+from uuid import uuid4
 
 
 class BaseModel(Model):
-    id = UUIDField(auto_created=True, null=False, primary_key=True)
+    id = UUIDField(default=uuid4, null=False, primary_key=True)
 
     class Meta:
         abstract = True
@@ -30,7 +31,7 @@ class ModifyMixin(Model):
 
 
 class Credentials(BaseModel, CreateMixin, ModifyMixin):
-    username = CharField(max_length=255, null=False, db_index=True)
+    username = CharField(max_length=255, null=False, db_index=True, unique=True)
     password = CharField(max_length=512, null=False)
 
 
@@ -43,8 +44,8 @@ class Books(BaseModel, CreateMixin, ModifyMixin):
 class Members(BaseModel, CreateMixin, ModifyMixin):
     fullname = CharField(max_length=255, null=False)
     email = CharField(max_length=255)
-    username = ForeignKey(Credentials, null=False, on_delete=models.DO_NOTHING)
-    status = BooleanField(null=False)
+    username = CharField(max_length=255, null=False, db_index=True, unique=True)
+    active = BooleanField(null=False)
     role = CharField(max_length=255, db_index=True)
 
 
@@ -56,7 +57,7 @@ class LendingLog(BaseModel, CreateMixin, ModifyMixin):
     ]
 
     book = ForeignKey(Books, on_delete=models.DO_NOTHING)
-    borrower_name = ForeignKey(Members, on_delete=models.DO_NOTHING)
+    borrower_username = CharField(max_length=255, null=False, db_index=True, unique=True)
     current_book_status = CharField(max_length=2, choices=status)
     expected_return_date = DateField()
     actual_return_date = DateField(default=datetime.now)
