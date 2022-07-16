@@ -4,6 +4,7 @@ from .models import Members, Credentials
 from .serializers import MembersSerializer, CredentialsSerializer
 from rest_framework.decorators import api_view
 from rest_framework import status
+from bcrypt import hashpw, gensalt
 # Create your views here.
 
 
@@ -16,7 +17,10 @@ def home(request):
 def signup(request):
     try:
         registration_data = request.data
-        credentials_details = {'username': registration_data['username'], 'password': registration_data['password']}
+        raw_password = registration_data['password'].encode('utf-8')
+        password_salt = gensalt()
+        hashed_password = hashpw(raw_password, password_salt)
+        credentials_details = {'username': registration_data['username'], 'password': str(hashed_password)}
         members_details = {'username': registration_data['username'], 'fullname': registration_data['fullname'],
                            'email': registration_data['email'], 'active': True, 'role': 'member'}
         credentials_serializer = CredentialsSerializer(data=credentials_details)
