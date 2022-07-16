@@ -1,5 +1,5 @@
 from django.db import models
-
+from datetime import datetime
 # Create your models here.
 from django.db.models import (ForeignKey, DateField, CharField,
                               UUIDField, IntegerField, BooleanField,
@@ -14,7 +14,7 @@ class BaseModel(Model):
 
 
 class CreateMixin(Model):
-    created_on = DateField(auto_created=True)
+    created_on = DateField(default=datetime.now)
     created_by = CharField(max_length=255)
 
     class Meta:
@@ -22,11 +22,16 @@ class CreateMixin(Model):
 
 
 class ModifyMixin(Model):
-    modified_on = DateField(auto_created=True)
+    modified_on = DateField(default=datetime.now)
     modified_by = CharField(max_length=255)
 
     class Meta:
         abstract = True
+
+
+class Credentials(BaseModel, CreateMixin, ModifyMixin):
+    username = CharField(max_length=255, null=False, db_index=True)
+    password = CharField(max_length=512, null=False)
 
 
 class Books(BaseModel, CreateMixin, ModifyMixin):
@@ -36,12 +41,14 @@ class Books(BaseModel, CreateMixin, ModifyMixin):
 
 
 class Members(BaseModel, CreateMixin, ModifyMixin):
-    username = CharField(max_length=255, db_index=True)
-    status = BooleanField()
+    fullname = CharField(max_length=255, null=False)
+    email = CharField(max_length=255)
+    username = ForeignKey(Credentials, null=False, on_delete=models.DO_NOTHING)
+    status = BooleanField(null=False)
     role = CharField(max_length=255, db_index=True)
 
 
-class BorrowStatus(BaseModel, CreateMixin, ModifyMixin):
+class LendingLog(BaseModel, CreateMixin, ModifyMixin):
 
     status = [
         {"B": "Borrowed",
@@ -51,4 +58,5 @@ class BorrowStatus(BaseModel, CreateMixin, ModifyMixin):
     book = ForeignKey(Books, on_delete=models.DO_NOTHING)
     borrower_name = ForeignKey(Members, on_delete=models.DO_NOTHING)
     current_book_status = CharField(max_length=2, choices=status)
-
+    expected_return_date = DateField()
+    actual_return_date = DateField(default=datetime.now)
